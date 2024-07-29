@@ -9,7 +9,7 @@ def control_rod(choices, H, num_nodes):
     newchoices = []
     p = len(H) / float(num_nodes)
     total = 0
-
+    choices = list(choices)
     for i in range(0, len(choices)):
         n = float(choices[i][0].count('N'))
         t = float(choices[i][0].count('T'))
@@ -56,7 +56,7 @@ def find_match(N, prod_rules):
     if len(N) == 1 and ['S'] in N: return [('S', 'S')]
     matching = {}
     while True:
-        lhs = random.choice(prod_rules.keys()).lstrip("(").rstrip(")")
+        lhs = random.choice(list(prod_rules.keys())).lstrip("(").rstrip(")")
         lhs = lhs.split(",")
         c = try_combination(lhs, N)
         if c: return c

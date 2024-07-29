@@ -8,6 +8,7 @@ import random
 import collections
 from collections import Counter
 from random import sample
+import os
 
 
 def hops(all_succs, start, level=0, debug=False):
@@ -52,7 +53,7 @@ def bfs_eff_diam(G, NTestNodes, P):
 
     DistToCntH = {}
 
-    NodeIdV = nx.nodes(G)
+    NodeIdV = list(nx.nodes(G))
     random.shuffle(NodeIdV)
 
     for tries in range(0, min(NTestNodes, nx.number_of_nodes(G))):
@@ -81,7 +82,10 @@ def bfs_eff_diam(G, NTestNodes, P):
             CdfV[i + 1] = 0
         CdfV[i + 1] = CdfV[i] + CdfV[i + 1]
 
-    EffPairs = P * CdfV[next(reversed(CdfV))]
+    try:
+        EffPairs = P * CdfV[next(reversed(CdfV))]
+    except:
+        return 0
 
     for ValN in CdfV.keys():
         if CdfV[ValN] > EffPairs: break
@@ -100,25 +104,25 @@ def draw_diam_plot(orig_g, mG):
     ori_degree_seq = []
     for i in range(0, len(max(mG))):
         ori_degree_seq.append(gD)
+    fig, ax = plt.subplots()
+    ax.fill_between(df.columns, df.mean() - df.sem(), df.mean() + df.sem(), color='blue', alpha=0.2, label="se")
+    h, = ax.plot(df.mean(), color='blue', aa=True, linewidth=4, ls='--', label="H*")
+    orig, = ax.plot(ori_degree_seq, color='black', linewidth=2, ls='-', label="H")
 
-    plt.fill_between(df.columns, df.mean() - df.sem(), df.mean() + df.sem(), color='blue', alpha=0.2, label="se")
-    h, = plt.plot(df.mean(), color='blue', aa=True, linewidth=4, ls='--', label="H*")
-    orig, = plt.plot(ori_degree_seq, color='black', linewidth=2, ls='-', label="H")
+    ax.set_title('Diameter Plot')
+    ax.set_ylabel('Diameter')
+    ax.set_xlabel('Growth')
 
-    plt.title('Diameter Plot')
-    plt.ylabel('Diameter')
-    plt.xlabel('Growth')
-
-    plt.tick_params(
-        axis='x',  # changes apply to the x-axis
+    ax.xaxis.set_tick_params(
+        # axis='x',  # changes apply to the x-axis
         which='both',  # both major and minor ticks are affected
         bottom='off',  # ticks along the bottom edge are off
         top='off',  # ticks along the top edge are off
         labelbottom='off')  # labels along the bottom edge are off
-    plt.legend([orig, h], ['$H$', 'HRG $H^*$'], loc=4)
-    # fig = plt.gcf()
-    # fig.set_size_inches(5, 4, forward=True)
-    plt.show()
+    ax.legend([orig, h], ['$H$', 'HRG $H^*$'], loc=4)
+    # ax = plt.gcf()
+    # ax.set_size_inches(5, 4, forward=True)
+    fig.savefig(os.path.join(os.getcwd(), 'diam_plot.png'))
 
 
 
@@ -141,37 +145,37 @@ def draw_graphlet_plot(orig_g, mG):
     plt.ylim(ymin=0)
     #fig = plt.gcf()
     #fig.set_size_inches(5, 3, forward=True)
-    plt.show()
+    fig.savefig(os.path.join(os.getcwd(), 'graphlet_plot.png'))
 
 
 def draw_degree_rank_plot(orig_g, mG):
-    ori_degree_seq = sorted(nx.degree(orig_g).values(), reverse=True)  # degree sequence
+    ori_degree_seq = sorted(dict(nx.degree(orig_g)).values(), reverse=True)  # degree sequence
     deg_seqs = []
     for newg in mG:
-        deg_seqs.append(sorted(nx.degree(newg).values(), reverse=True))  # degree sequence
+        deg_seqs.append(sorted(dict(nx.degree(newg)).values(), reverse=True))  # degree sequence
     df = pd.DataFrame(deg_seqs)
+    fig, ax = plt.subplots()
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.fill_between(df.columns, df.mean() - df.sem(), df.mean() + df.sem(), color='blue', alpha=0.2, label="se")
+    h, = ax.plot(df.mean(), color='blue', aa=True, linewidth=4, ls='--', label="H*")
+    orig, = ax.plot(ori_degree_seq, color='black', linewidth=4, ls='-', label="H")
 
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.fill_between(df.columns, df.mean() - df.sem(), df.mean() + df.sem(), color='blue', alpha=0.2, label="se")
-    h, = plt.plot(df.mean(), color='blue', aa=True, linewidth=4, ls='--', label="H*")
-    orig, = plt.plot(ori_degree_seq, color='black', linewidth=4, ls='-', label="H")
+    ax.set_title('Degree Distribution')
+    ax.set_ylabel('Degree')
+    ax.set_ylabel('Ordered Vertices')
 
-    plt.title('Degree Distribution')
-    plt.ylabel('Degree')
-    plt.ylabel('Ordered Vertices')
-
-    plt.tick_params(
-        axis='x',  # changes apply to the x-axis
+    ax.xaxis.set_tick_params(
+        # axis='x',  # changes apply to the x-axis
         which='both',  # both major and minor ticks are affected
         bottom='off',  # ticks along the bottom edge are off
         top='off',  # ticks along the top edge are off
         labelbottom='off')  # labels along the bottom edge are off
 
-    plt.legend([orig, h], ['$H$', 'HRG $H^*$'], loc=3)
-    # fig = plt.gcf()
+    ax.legend([orig, h], ['$H$', 'HRG $H^*$'], loc=3)
+    # fig = ax.gcf()
     # fig.set_size_inches(5, 4, forward=True)
-    plt.show()
+    fig.savefig(os.path.join(os.getcwd(), 'degree_rank_plot.png'))
 
 
 def draw_network_value(orig_g, mG):
@@ -180,35 +184,36 @@ def draw_network_value(orig_g, mG):
     associated to the largest eigenvalue of the graph adjacency matrix has also been found to be
     skewed (Chakrabarti et al., 2004).
     """
-    eig_cents = [nx.eigenvector_centrality_numpy(g) for g in mG]  # nodes with eigencentrality
+    eig_cents = [nx.eigenvector_centrality(g) for g in mG]  # nodes with eigencentrality
 
-    srt_eig_cents = sorted(eig_cents, reverse=True)
+    # srt_eig_cents = sorted(eig_cents, reverse=True)
     net_vals = []
     for cntr in eig_cents:
         net_vals.append(sorted(cntr.values(), reverse=True))
     df = pd.DataFrame(net_vals)
 
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.fill_between(df.columns, df.mean() - df.sem(), df.mean() + df.sem(), color='blue', alpha=0.2, label="se")
+    fig, ax = plt.subplots()
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.fill_between(df.columns, df.mean() - df.sem(), df.mean() + df.sem(), color='blue', alpha=0.2, label="se")
 
-    h, = plt.plot(df.mean(), color='blue', aa=True, linewidth=4, ls='--', label="H*")
-    orig, = plt.plot(sorted(nx.eigenvector_centrality(orig_g).values(), reverse=True), color='black', linewidth=4,
+    h, = ax.plot(df.mean(), color='blue', aa=True, linewidth=4, ls='--', label="H*")
+    orig, = ax.plot(sorted(nx.eigenvector_centrality(orig_g).values(), reverse=True), color='black', linewidth=4,
                      ls='-', label="H")
 
-    plt.title('Principle Eigenvector Distribution')
-    plt.ylabel('Principle Eigenvector')
-    plt.tick_params(
-        axis='x',  # changes apply to the x-axis
+    ax.set_title('Principle Eigenvector Distribution')
+    ax.set_ylabel('Principle Eigenvector')
+    ax.xaxis.set_tick_params(
+        # axis='x',  # changes apply to the x-axis
         which='both',  # both major and minor ticks are affected
         bottom='off',  # ticks along the bottom edge are off
         top='off',  # ticks along the top edge are off
         labelbottom='off')  # labels along the bottom edge are off
 
-    plt.legend([orig, h], ['$H$', 'HRG $H^*$'], loc=3)
+    ax.legend([orig, h], ['$H$', 'HRG $H^*$'], loc=3)
     # fig = plt.gcf()
     # fig.set_size_inches(5, 4, forward=True)
-    plt.show()
+    fig.savefig(os.path.join(os.getcwd(), 'eigen_plot.png'))
 
 
 def draw_hop_plot(orig_g, mG):
@@ -217,23 +222,24 @@ def draw_hop_plot(orig_g, mG):
         c = get_graph_hops(g, 20)
         d = dict(c)
         m_hops_ar.append(d.values())
-        print "H* hops finished"
+        print("H* hops finished")
 
     df = pd.DataFrame(m_hops_ar)
 
     ## original plot
     c = get_graph_hops(orig_g, 20)
     dorig = dict(c)
+    fig, ax = plt.subplots()
+    ax.fill_between(df.columns, df.mean() - df.sem(), df.mean() + df.sem(), color='blue', alpha=0.2, label="se")
+    h, = ax.plot(df.mean(), color='blue', aa=True, linewidth=4, ls='--', label="H*")
+    orig, = ax.plot(dorig.values(), color='black', linewidth=4, ls='-', label="H")
+    ax.set_title('Hop Plot')
+    ax.set_ylabel('Reachable Pairs')
+    ax.set_xlabel('Number of Hops')
+    # ax.ylim(ymax=max(dorig.values()) + max(dorig.values()) * .10)
 
-    plt.fill_between(df.columns, df.mean() - df.sem(), df.mean() + df.sem(), color='blue', alpha=0.2, label="se")
-    h, = plt.plot(df.mean(), color='blue', aa=True, linewidth=4, ls='--', label="H*")
-    orig, = plt.plot(dorig.values(), color='black', linewidth=4, ls='-', label="H")
-    plt.title('Hop Plot')
-    plt.ylabel('Reachable Pairs')
-    plt.xlabel('Number of Hops')
-    # plt.ylim(ymax=max(dorig.values()) + max(dorig.values()) * .10)
-
-    plt.legend([orig, h, ], ['$H$', 'HRG $H^*$'], loc=1)
+    ax.legend([orig, h, ], ['$H$', 'HRG $H^*$'], loc=1)
     #fig = plt.gcf()
     #fig.set_size_inches(5, 4, forward=True)
-    plt.show()
+    fig.savefig(os.path.join(os.getcwd(), 'hop_plot.png'))
+    

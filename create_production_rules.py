@@ -54,9 +54,9 @@ def add_to_prod_rules(production_rules, lhs, rhs, s):
     lhs_str = "(" + ",".join(str(x) for x in sorted(lhs_s)) + ")"
 
     nodes = set()
-    rhs_term_dict = []
-    for c in sorted(nx.edges(rhs_s)):
-        rhs_term_dict.append((",".join(str(x) for x in sorted(list(c))), "T"))
+    rhs_term_dict = []    
+    for c in sorted(nx.edges(rhs_s), key=lambda e: (str(e[0]), str(e[1]))):
+        rhs_term_dict.append((",".join(str(x) for x in sorted(list(c), key=lambda x: str(x))), "T"))
         nodes.add(c[0])
         nodes.add(c[1])
 
@@ -87,7 +87,7 @@ def add_to_prod_rules(production_rules, lhs, rhs, s):
             rhs_dict[rhs_str] = 1
             ##sorting above makes rhs match perfectly if a match exists
 
-    print lhs_str, "->", rhs_str
+    print(lhs_str, "->", rhs_str)
 
 
 def visit(tu, indent, memo, production_rules, datree, graph):
@@ -97,7 +97,7 @@ def visit(tu, indent, memo, production_rules, datree, graph):
     if tu in memo:
         return
     memo.add(tu)
-    print " " * indent, " ".join(str(x) for x in tu)
+    print(" " * indent, " ".join(str(x) for x in tu))
     for tv in T[tu]:
         if tv in memo:
             continue

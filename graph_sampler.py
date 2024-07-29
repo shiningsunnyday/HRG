@@ -8,14 +8,18 @@ from collections import deque, Counter
 
 def sample(G):
     S = [0,0,0,0]
-    a = choice(G.nodes())
-    b = choice(G.nodes())
-    c = choice(G.nodes())
-    d = choice(G.nodes())
+    a = choice(list(G.nodes()))
+    b = choice(list(G.nodes()))
+    c = choice(list(G.nodes()))
+    d = choice(list(G.nodes()))
 
     Gprime = nx.subgraph(G, [a,b,c,d])
 
     return Gprime
+
+
+def cc_subgraphs(G):
+    return (G.subgraph(c) for c in nx.connected_components(G))    
 
 
 def subgraphs_cnt(G, num_smpl):
@@ -34,7 +38,7 @@ def subgraphs_cnt(G, num_smpl):
     for i in range(0,num_smpl):
         #size 2
         T = sample(G)
-        #print T.edges()
+        #print(T.edges())
 
         if T.number_of_edges() == 0:
             sub['e0'] += 1
@@ -42,12 +46,12 @@ def subgraphs_cnt(G, num_smpl):
             sub['e1'] += 1
         elif T.number_of_edges() == 2:
             path = nx.Graph([(0,1), (1,2)])
-            if len(max(nx.connected_component_subgraphs(T), key=len)) == 2:
+            if len(max(cc_subgraphs(T), key=len)) == 2:
                 sub['e2'] += 1
-            elif len(max(nx.connected_component_subgraphs(T), key=len)) == 3:
+            elif len(max(cc_subgraphs(T), key=len)) == 3:
                 sub['e2c'] += 1
             else:
-                print "ERROR"
+                print("ERROR")
         elif T.number_of_edges() == 3:
             #triangle
             triangle = nx.Graph([(0,1), (1,2), (2,0)])
@@ -55,14 +59,14 @@ def subgraphs_cnt(G, num_smpl):
             path = nx.Graph([(0,1), (1,2), (2,3)])
             #star
             star = nx.Graph([(0,1), (0,2), (0,3)])
-            if max(nx.connected_component_subgraphs(T), key=len).number_of_nodes() == 3:
+            if max(cc_subgraphs(T), key=len).number_of_nodes() == 3:
                 sub['tri'] += 1
             elif nx.is_isomorphic(T, path):
                 sub['p3'] += 1
             elif nx.is_isomorphic(T, star):
                 sub['star'] += 1
             else:
-                print "ERROR"
+                print("ERROR")
         elif T.number_of_edges() == 4:
             square = nx.Graph([(0,1), (1,2), (2,3), (3,0)])
             triangletail = nx.Graph([(0,1), (1,2), (2,0), (2,3)])
@@ -71,13 +75,13 @@ def subgraphs_cnt(G, num_smpl):
             elif nx.is_isomorphic(T, triangletail):
                 sub['tritail'] += 1
             else:
-                print "ERROR"
+                print("ERROR")
         elif T.number_of_edges() == 5:
             sub['squarediag'] += 1
         elif T.number_of_edges() == 6:
             sub['k3'] += 1
         else:
-            print 'ERROR'
+            print('ERROR')
 
     return sub
 
