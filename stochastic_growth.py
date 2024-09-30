@@ -72,6 +72,7 @@ def grow(prod_rules, n, diam=0):
     # pick non terminal
     num = 0
     while len(N) > 0 and num < n:
+
         lhs_match = find_match(N, prod_rules)
         e = []
         match = []

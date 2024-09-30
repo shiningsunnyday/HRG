@@ -5,16 +5,18 @@ import create_production_rules as pr
 import graph_sampler as gs
 import stochastic_growth as sg
 import net_metrics as nm
-
 import networkx as nx
+import sys
+sys.path.append('/home/msun415/induction')
+import matplotlib.pyplot as plt
 
 def main():
     # Example Graphs
     # G = nx.star_graph(6)
     # G = nx.ladder_graph(10)
-    G = nx.karate_club_graph()
+    # G = nx.karate_club_graph()
 
-    # G = nx.barabasi_albert_graph(1000,3)
+    G = nx.barabasi_albert_graph(1000,3)
     # G = nx.connected_watts_strogatz_graph(200,8,.2)
 
     # G = nx.read_edgelist("../Phoenix/demo_graphs/as20000102.txt")
@@ -64,7 +66,9 @@ def main():
             prod_rules = pr.learn_production_rules(Gprime, T)
     else:
         T = td.quickbb(G)
-        prod_rules = pr.learn_production_rules(G, T)
+        # KDD paper
+        root = frozenset([3,4,5])
+        prod_rules = pr.learn_production_rules(G, T, root)
 
     print("Rule Induction Complete")
 
@@ -77,6 +81,9 @@ def main():
             nG, nD = sg.grow(prod_rules, num_nodes, 1)
         else:
             nG, nD = sg.grow(prod_rules, num_nodes, num_nodes / 50)
+        fig, ax = plt.subplots()
+        nx.draw(nG, ax=ax)
+        fig.savefig(f'watts_strogatz_graph/{run}.png')
         Gstar.append(nG)
         Dstar.append(nD)
         Gstargl.append(gs.subgraphs_cnt(nG, 1000))

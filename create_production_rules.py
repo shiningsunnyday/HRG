@@ -20,7 +20,7 @@ def get_production_rule(G, child, itx):
     return rhs
 
 
-def add_to_prod_rules(production_rules, lhs, rhs, s):
+def add_to_prod_rules(production_rules, lhs, rhs, s, tu=None):
     prod_rules = production_rules
     letter = 'a'
     d = {}
@@ -64,29 +64,37 @@ def add_to_prod_rules(production_rules, lhs, rhs, s):
         rhs_term_dict.append((",".join(str(d[x]) for x in sorted(c)), "N"))
         for x in c:
             nodes.add(d[x])
-
-    for singletons in set(nx.nodes(rhs_s)).difference(nodes):
-        rhs_term_dict.append((singletons, "T"))
+    
+    for singletons in set(nx.nodes(rhs_s)).difference(nodes):        
+        rhs_term_dict.append((str(singletons), "T"))
 
     rhs_str = ""
     for n in rhs_term_dict:
         rhs_str = rhs_str + "(" + n[0] + ":" + n[1] + ")"
         nodes.add(n[0])
     if rhs_str == "":
-        rhs_str = "()"
-
+        rhs_str = "()"            
     if lhs_str not in prod_rules:
         rhs_dict = {}
-        rhs_dict[rhs_str] = 1
-        prod_rules[lhs_str] = rhs_dict
-    else:
-        rhs_dict = prod_rules[lhs_str]
-        if rhs_str in rhs_dict:
-            prod_rules[lhs_str][rhs_str] = rhs_dict[rhs_str] + 1
+        if tu:
+            rhs_dict[(rhs_str, 1, tuple(tu), tuple(d.items()))] = (1, tu, d)
         else:
             rhs_dict[rhs_str] = 1
+        prod_rules[lhs_str] = rhs_dict
+    else:        
+        rhs_dict = prod_rules[lhs_str]
+        if rhs_str in rhs_dict:                        
+            if tu:
+                tup = (rhs_dict[rhs_str][0] + 1, rhs_dict[rhs_str][1], rhs_dict[rhs_str][2])  
+                prod_rules[lhs_str][(rhs_str,)+tup] = tup
+            else:
+                prod_rules[lhs_str][rhs_str] = rhs_dict[rhs_str] + 1          
+        else:
+            if tu:
+                rhs_dict[(rhs_str, 1, tuple(tu), tuple(d.items()))] = (1, tu, d)
+            else:
+                rhs_dict[rhs_str] = 1
             ##sorting above makes rhs match perfectly if a match exists
-
     print(lhs_str, "->", rhs_str)
 
 
@@ -107,17 +115,18 @@ def visit(tu, indent, memo, production_rules, datree, graph):
         for c in T[tv]:
             if c in memo:  continue
             s.append(list(set(c).intersection(tv)))
-        add_to_prod_rules(prod_rules, itx, rhs, s)
+        add_to_prod_rules(prod_rules, itx, rhs, s, tu=list(tv))
         visit(tv, indent + 2, memo, prod_rules, T, G)
 
 
-def learn_production_rules(G, T):
+def learn_production_rules(G, T, root=None):
     prod_rules = {}
-    root = list(T)[0]
+    if root is None:
+        root = list(T)[0]
     rhs = get_production_rule(G, root, set())
     s = list()
     for c in T[root]:
         s.append(list(set(c).intersection(root)))
-    add_to_prod_rules(prod_rules, set(), rhs, s)
+    add_to_prod_rules(prod_rules, set(), rhs, s, tu=list(root))
     visit(root, 0, set(), prod_rules, T, G)
     return prod_rules
